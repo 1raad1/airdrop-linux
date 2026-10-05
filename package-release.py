@@ -28,8 +28,12 @@ info = json.dumps({'version': args.version, 'platform': args.platform,
                    'source_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
                    'note': 'Platform-specific build; see README requirements and compatibility matrix.'}, indent=2).encode() + b'\n'
 with tarfile.open(destination, 'w:gz') as archive:
+    def public_metadata(member):
+        member.uid = member.gid = 0
+        member.uname = member.gname = ''
+        return member
     for name in files:
-        archive.add(ROOT / name, arcname=prefix + '/' + name, recursive=False)
+        archive.add(ROOT / name, arcname=prefix + '/' + name, recursive=False, filter=public_metadata)
     metadata = tarfile.TarInfo(prefix + '/BUILD-INFO.json')
     metadata.size = len(info); metadata.mode = 0o644
     archive.addfile(metadata, io.BytesIO(info))
