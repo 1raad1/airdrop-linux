@@ -12,7 +12,7 @@ This is a community interoperability project based on [OpenDrop Rust](https://gi
 | iPhone 13 Pro, iOS 27.0 | Received and sent files through native AirDrop; user confirmed files arrived and opened |
 | iPhone → Linux, same 833,293-byte JPEG | 15.65 seconds, exact SHA-256 match; earlier version took 79.46 seconds |
 | Linux → iPhone, 53-byte text | Delivered and opened |
-| Linux → iPhone, 2,048,292-byte TIFF | Delivered and opened; upload reduced from 233 seconds to about 14 seconds using the temporary AP context; 1,224,353 bytes after lossless compression |
+| Linux → iPhone, 2,048,292-byte TIFF | Delivered and opened twice; uploads reduced from 233 seconds to about 14 seconds each using the temporary AP context; 1,224,353 bytes after lossless compression |
 | Other adapters, distributions, desktop environments and iOS versions | Not verified on real hardware |
 
 **Speed depends strongly on the Wi-Fi driver.** The tested Realtek adapter takes about 120 ms to change channels, so the compatibility backend stays on channel 44 while the iPhone hops. Plain monitor mode took 233 seconds to upload the TIFF, with about 19% retransmitted TCP bytes. Keeping a temporary AP hardware context on the same channel reduced the upload to about 14 seconds and retransmissions to about 1%. This is a hardware-specific workaround, and remains slower than typical Apple-to-Apple transfers. Other hardware is unverified.
