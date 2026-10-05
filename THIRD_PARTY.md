@@ -16,6 +16,6 @@ Local Rust changes include interface-scoped discovery/listening; mDNS hop limit 
 
 Local OWL changes include fixed-channel pin compatibility, duplicate suppression for already-delivered retry frames, preserved injection sequence/order and initialized radiotap metadata. The original `filin` backend remains available for other adapters but is not covered by the verified Realtek hardware result.
 
-The desktop layer adds temporary privileged radio setup, regular-user file I/O, session cleanup/extension, optional Qt tray, optional Dolphin service menu, dynamic hostname/XDG paths and a portable installer. The initial working baseline is retained before later throughput experiments.
+The desktop layer adds temporary privileged radio setup, regular-user file I/O, session cleanup/extension, optional Qt tray, optional Dolphin service menu, dynamic hostname/XDG paths and a portable installer. Version 0.1.1 adds a temporary hidden WPA2 hardware context using the system's `wpa_supplicant`, automatically limited to the tested RTL8852CE driver; it stops and removes its private credentials with the radio session. Bluetooth wake-up advertising stops after acceptance. The initial working baseline is retained at tag `v0.1.0`.
 
 Cargo dependency versions are locked. Other dependencies retain their own licenses. Source and build instructions accompany release binaries; platform-specific binaries should not be mistaken for universal Linux support.

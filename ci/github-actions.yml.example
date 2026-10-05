@@ -23,6 +23,9 @@ jobs:
           python3 tests/check_receiver.py
           QT_QPA_PLATFORM=offscreen python3 tests/check_sender_dialog.py
           python3 tests/check_install.py
+          python3 tests/check_radio_context.py
+          cmake --build native/owl/build --target tests
+          native/owl/build/tests/tests
       - uses: actions/upload-artifact@v4
         with:
           name: native-binaries-ubuntu-24.04-x86_64

@@ -39,6 +39,11 @@ with tempfile.TemporaryDirectory() as temporary:
     assert dialog.send_button.isEnabled() and not dialog.retry.isActive()
     run("send", "pass")
     assert "successfully" in dialog.status.text()
+    dialog.ble.start(sys.executable, ["-c", "import time; time.sleep(30)"])
+    assert dialog.ble.waitForStarted(1000)
+    run("send", "import sys; print('POST /Upload', file=sys.stderr)")
+    assert dialog.ble.state() == QProcess.ProcessState.NotRunning
+    assert "successfully" in dialog.status.text()
     run("send", "import sys; print('Error: The iPhone declined the transfer.', file=sys.stderr); sys.exit(1)")
     assert "declined" in dialog.status.text() and "successfully" not in dialog.status.text()
     dialog.peers = []

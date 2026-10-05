@@ -31,6 +31,7 @@
 // This file implements death tests.
 
 #include "gtest/gtest-death-test.h"
+#include <cstdint>
 
 #include <utility>
 

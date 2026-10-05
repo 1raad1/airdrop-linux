@@ -12,10 +12,10 @@ This is a community interoperability project based on [OpenDrop Rust](https://gi
 | iPhone 13 Pro, iOS 27.0 | Received and sent files through native AirDrop; user confirmed files arrived and opened |
 | iPhone → Linux, same 833,293-byte JPEG | 15.65 seconds, exact SHA-256 match; earlier version took 79.46 seconds |
 | Linux → iPhone, 53-byte text | Delivered and opened |
-| Linux → iPhone, 2,048,292-byte TIFF | Delivered and opened in 233 seconds; 1,224,353 bytes after lossless compression |
+| Linux → iPhone, 2,048,292-byte TIFF | Delivered and opened; upload reduced from 233 seconds to about 14 seconds using the temporary AP context; 1,224,353 bytes after lossless compression |
 | Other adapters, distributions, desktop environments and iOS versions | Not verified on real hardware |
 
-**Sending is still slow on the tested Realtek adapter.** Its channel changes take about 120 ms, so the compatibility backend stays on one channel while the iPhone hops. About 19% of transmitted TCP bytes were retransmissions in the TIFF test. BBR helped that upload complete after an earlier attempt stalled and failed, but this is not yet normal Apple-to-Apple performance.
+**Speed depends strongly on the Wi-Fi driver.** The tested Realtek adapter takes about 120 ms to change channels, so the compatibility backend stays on channel 44 while the iPhone hops. Plain monitor mode took 233 seconds to upload the TIFF, with about 19% retransmitted TCP bytes. Keeping a temporary AP hardware context on the same channel reduced the upload to about 14 seconds and retransmissions to about 1%. This is a hardware-specific workaround, and remains slower than typical Apple-to-Apple transfers. Other hardware is unverified.
 
 ## Requirements
 
@@ -25,17 +25,18 @@ This is a community interoperability project based on [OpenDrop Rust](https://gi
 - PySide6 for the sending window and tray. Receiver consent uses `kdialog`, `zenity`, PySide6, or an interactive terminal. It declines if no consent interface is available.
 - `xdg-utils`; optionally `notify-send`. Dolphin is used on KDE when available; other desktops use `xdg-open` after reception.
 - To build: Rust/Cargo, C/C++ compiler, CMake, libpcap, libev and libnl development packages.
+- `wpa_supplicant` for the RTL8852CE speed workaround; without it the application falls back to plain monitor mode.
 
 Arch/CachyOS example (review the packages for your own setup):
 
 ```sh
-sudo pacman -S --needed base-devel rust cmake libpcap libev libnl python python-pyside6 python-dbus python-gobject bluez iw iproute2 iptables networkmanager polkit openssl xdg-utils libnotify
+sudo pacman -S --needed base-devel rust cmake libpcap libev libnl python python-pyside6 python-dbus python-gobject bluez iw iproute2 iptables networkmanager polkit openssl xdg-utils libnotify wpa_supplicant
 ```
 
 Debian/Ubuntu build prerequisites:
 
 ```sh
-sudo apt install build-essential cmake cargo libpcap-dev libev-dev libnl-3-dev libnl-genl-3-dev libnl-route-3-dev python3 python3-venv python3-dbus python3-gi bluez iw iproute2 iptables network-manager policykit-1 openssl xdg-utils libnotify-bin zenity
+sudo apt install build-essential cmake cargo libpcap-dev libev-dev libnl-3-dev libnl-genl-3-dev libnl-route-3-dev python3 python3-venv python3-dbus python3-gi bluez iw iproute2 iptables network-manager policykit-1 openssl xdg-utils libnotify-bin zenity wpasupplicant
 ```
 
 Use a recent stable Rust toolchain if your distribution's Cargo cannot build the locked dependencies. If PySide6 is absent from the distribution, create a virtual environment that can access the system's D-Bus/GObject bindings:
@@ -85,6 +86,8 @@ Files go into the user's XDG download folder under **AirDrop** (`~/Downloads/Air
 
 Sessions last 15 minutes. An active outgoing transfer extends the deadline, then an extended session stops about a minute after it ends. Turning AirDrop off stops it immediately. The radio interface and temporary firewall exceptions are removed and the previous managed-interface state is restored on normal shutdown.
 
+On `rtw89_8852ce`, automatic OWL/pin mode also starts a hidden WPA2 AP context on channel 44 using `wpa_supplicant`. It uses a fresh random key in a root-private `/run` directory and configures no DHCP, bridging or routing. File traffic continues over AWDL. This keeps the adapter's hardware MAC active; the observed speed gain suggests the monitor-only hardware state was a major bottleneck. Shutdown stops the context, removes its credentials and restores managed Wi-Fi mode. If setup fails, the receiver falls back to plain monitor mode. Other drivers do not automatically enable this workaround.
+
 ## Send to an iPhone
 
 1. Unlock the phone, select **Everyone for 10 Minutes**, and keep Wi-Fi/Bluetooth enabled.
@@ -122,12 +125,13 @@ Set environment variables before launching the application:
 | `AIRDROP_STATE_DIR` | Override private session/log directory; defaults to `$XDG_STATE_HOME/airdrop-linux` or `~/.local/state/airdrop-linux` |
 | `AIRDROP_BACKEND=auto/ owl/ filin` | Choose the radio implementation; auto uses OWL on rtw89 and filin elsewhere |
 | `AIRDROP_CHANNEL_STRATEGY=auto/ pin/ verbatim/ rotate/ widen/ intersect` | OWL scheduling; auto uses pin on rtw89, verbatim elsewhere; strategies require hardware testing |
+| `AIRDROP_MAC_CONTEXT=auto/ off/ ap` | Auto enables the temporary AP context only for `rtw89_8852ce` with OWL/pin and `wpa_supplicant`; `off` disables it; explicit `ap` requires OWL/pin and is unverified on other hardware |
 
 Values contain no spaces: for example `AIRDROP_BACKEND=owl AIRDROP_CHANNEL_STRATEGY=pin python3 AirDropReceiver/receive.py`.
 
 - **No device / connection refused:** refresh Everyone for 10 Minutes, reopen the iPhone Share → AirDrop screen and search again. A refusal can mean the phone has closed its receiving port.
 - **Radio will not start:** check `radio.log`, polkit authentication, whether the adapter is connected, and monitor/injection capability.
-- **Slow / stalls:** inspect the radio link and retransmissions. More capable injection and channel scheduling are necessary for high throughput; fast ordinary Wi-Fi does not guarantee fast monitor injection. BBR is enabled only on the sender's sockets when available, without changing the system TCP default.
+- **Slow / stalls:** inspect the radio link and retransmissions. On RTL8852CE, check for `RADIO_CONTEXT=ap` in `radio.log` and install `wpa_supplicant` if absent. Set `AIRDROP_MAC_CONTEXT=off` to compare with plain monitor mode. BBR is enabled only on the sender's sockets when available, without changing the system TCP default. Bluetooth wake-up advertising stops once the peer accepts an upload; system Bluetooth stays enabled.
 - **Stuck phone progress after a failed upload:** cancel the phone's transfer. If no Cancel is available, turn Wi-Fi off and on in Settings, select Everyone again and reopen AirDrop before retrying.
 - **No tray on another desktop:** use the application-menu launchers or scripts. GNOME may need its own tray support; it is not tested here.
 
@@ -143,6 +147,9 @@ python3 tests/check_sender.py
 python3 tests/check_receiver.py
 QT_QPA_PLATFORM=offscreen python3 tests/check_sender_dialog.py
 python3 tests/check_install.py
+python3 tests/check_radio_context.py
+cmake --build native/owl/build --target tests
+native/owl/build/tests/tests
 ```
 
 An optional GitHub Actions build/test template is provided in `ci/github-actions.yml.example`; copy it to `.github/workflows/test.yml` to enable CI.

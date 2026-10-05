@@ -89,13 +89,13 @@ def main():
     prepare_state(STATE)
     lock = (STATE / "lock").open("w")
     try:
-        iface = wifi_interface()
-        if not iface:
-            error("No Wi-Fi radio selected or available.")
-            return 1
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError:
         notify("Already running. Use Stop AirDrop Receiver to end the session.")
+        return 1
+    iface = wifi_interface()
+    if not iface:
+        error("No Wi-Fi radio selected or available.")
         return 1
     (STATE / "pid").write_text(str(os.getpid()))
     (STATE / "mode").unlink(missing_ok=True)
@@ -108,7 +108,8 @@ def main():
     try:
         notify("Authenticate in the Linux password prompt to start the AirDrop radio.")
         radio = subprocess.Popen(["pkexec", "/usr/bin/bash", str(BASE / "radio.sh"), iface,
-                                  os.environ.get("AIRDROP_BACKEND", "auto"), os.environ.get("AIRDROP_CHANNEL_STRATEGY", "auto")],
+                                  os.environ.get("AIRDROP_BACKEND", "auto"), os.environ.get("AIRDROP_CHANNEL_STRATEGY", "auto"),
+                                  os.environ.get("AIRDROP_MAC_CONTEXT", "auto")],
                                  stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT,
                                  start_new_session=True)
         deadline = time.monotonic() + 120

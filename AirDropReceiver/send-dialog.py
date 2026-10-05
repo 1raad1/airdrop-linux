@@ -151,6 +151,10 @@ class SendDialog(QDialog):
             if "POST /Ask" in text:
                 self.status.setText("Waiting for you to accept the AirDrop on your iPhone…")
             if "POST /Upload" in text:
+                # Discovery is complete once Ask is accepted. Release this
+                # advertisement while the shared radio carries the upload.
+                if self.ble.state() != QProcess.ProcessState.NotRunning:
+                    self.ble.terminate()
                 self.status.setText("Sending files… Keep the phone nearby.")
             percentages = re.findall(r"Upload progress: (\d+)", text)
             if percentages:
