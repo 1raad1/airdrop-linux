@@ -1,0 +1,29 @@
+name: Build and test
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Native and Qt dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake libpcap-dev libev-dev libnl-3-dev libnl-genl-3-dev libnl-route-3-dev libegl1 libopengl0
+          python3 -m pip install PySide6
+      - name: Build native binaries
+        run: ./build.sh
+      - name: Rust tests
+        run: cargo test --manifest-path native/opendrop-rs/Cargo.toml --locked
+      - name: Protocol, desktop and install tests
+        run: |
+          python3 tests/check_sender.py
+          python3 tests/check_receiver.py
+          QT_QPA_PLATFORM=offscreen python3 tests/check_sender_dialog.py
+          python3 tests/check_install.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-binaries-ubuntu-24.04-x86_64
+          path: AirDropReceiver/bin/

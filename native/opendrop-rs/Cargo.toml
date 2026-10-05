@@ -1,0 +1,23 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/filin-rs",
+    "crates/luftlift-rs",
+]
+
+[workspace.package]
+edition = "2021"
+license = "GPL-3.0-only"
+repository = "local"
+
+# Shared dependency versions. Add to these as needed (coordinate via Claude).
+[workspace.dependencies]
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+anyhow = "1"
+thiserror = "2"
+clap = { version = "4", features = ["derive"] }
+libc = "0.2"
+
+[patch.crates-io]
+mdns-sd = { path = "vendor/mdns-sd" }

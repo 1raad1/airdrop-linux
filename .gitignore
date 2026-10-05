@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+AirDropReceiver/bin/*
+!AirDropReceiver/bin/.gitkeep
+native/opendrop-rs/target/
+native/owl/build/
+dist/
+*.log
+*.pcap
+.DS_Store

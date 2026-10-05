@@ -1,0 +1,15 @@
+# Rust build artifacts
+/target
+**/target
+
+# Vendored GPL reference checked out on demand (see scripts/fetch-owl.sh).
+# Kept out of the tree so this repo stays MIT-licensed.
+/owl/
+/vendor/
+
+# Packet captures / logs / scratch
+*.cap
+*.pcap
+*.pcapng
+*.log
+/tmp-*

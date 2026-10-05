@@ -1,0 +1,46 @@
+[package]
+name = "luftlift-rs"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+
+# A Rust port of SEEMOO's opendrop (the AirDrop application layer).
+# Runs over the awdl0 interface that awdl-rs brings up; talks to real Apple devices.
+
+[lib]
+name = "luftlift_rs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "luftlift"
+path = "src/main.rs"
+
+[dependencies]
+tracing.workspace = true
+tracing-subscriber.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+clap.workspace = true
+# libc::if_nametoindex to resolve `-i awdl0` -> interface index for IPv6
+# link-local scope_id on the send path.
+libc.workspace = true
+# zlib (de)compression for the dvzip framed-zlib format. Pure-Rust default
+# backend (miniz_oxide); no system zlib needed. Local dep — ask Claude to hoist
+# into [workspace.dependencies] if other crates want it too.
+flate2 = "1"
+# Apple binary + XML plist read/write for Discover/Ask request+response.
+plist = "1"
+# Self-signed cert generation for the AirDrop HTTPS server.
+rcgen = "0.13"
+# TLS for the AirDrop HTTPS server on port 8771. ring backend (portable, no C deps).
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+rustls-pemfile = "2"
+# Pure-Rust mDNS (no system avahi/dbus dependency) for _airdrop._tcp announce.
+mdns-sd = "0.11"
+# SIGINT/SIGTERM handler for graceful mDNS goodbye (TTL=0) on `receive` exit.
+ctrlc = "3"
+# JSON serialisation for the loopback introspection API (/status, /trace).
+# Plain serde_json keeps the introspect surface tiny — no full async runtime.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Add as needed: hyper/axum, cpio, etc.

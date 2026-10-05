@@ -1,0 +1,26 @@
+[package]
+name = "filin-rs"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+
+# A Rust port of SEEMOO's owl (Apple Wireless Direct Link daemon).
+# filin ("eagle-owl" in Russian) — a Rust port of SEEMOO's owl AWDL daemon.
+
+[[bin]]
+name = "filin"
+path = "src/main.rs"
+
+[dependencies]
+tracing.workspace = true
+tracing-subscriber.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+clap.workspace = true
+libc = { workspace = true }
+# JSON serialization for the localhost introspection HTTP API (see
+# FILIN_HTTP_INTROSPECT.md). Lightweight, non-async. Hand-rolled HTTP on
+# std::net::TcpListener avoids pulling in an HTTP framework or async runtime.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Add as needed: nix, pcap, neli/nl80211, tokio, etc. (coordinate big additions)
